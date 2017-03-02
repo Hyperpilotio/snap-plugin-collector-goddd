@@ -1,13 +1,14 @@
 package: github.com/swhsiang/snap-plugin-collector-goddd
 import:
-- package: github.com/intelsdi-x/snap
-  version: ^1.1.0
+- package: github.com/intelsdi-x/snap-plugin-lib-go
   subpackages:
-  - control/plugin
-- package: github.com/prometheus/prometheus
-  version: ^1.5.2
+  - v1/plugin
+- package: github.com/prometheus/client_model
   subpackages:
-  - promql
+  - go
+- package: github.com/prometheus/common
+  subpackages:
+  - expfmt
 testImport:
 - package: github.com/smartystreets/goconvey
   version: ^1.6.2
