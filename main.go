@@ -4,14 +4,14 @@ import (
 	"os"
 
 	"github.com/intelsdi-x/snap/control/plugin"
-	"github.com/raintank/snap-plugin-collector-ping/ping"
+	"github.com/swhsiang/snap-plugin-collector-goddd/goddd"
 )
 
 func main() {
 
 	plugin.Start(
-		ping.Meta(),
-		ping.New(),
+		goddd.Meta(),
+		goddd.New(),
 		os.Args[1],
 	)
 }

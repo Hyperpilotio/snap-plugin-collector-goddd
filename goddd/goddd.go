@@ -1,8 +1,12 @@
-package ping
+package goddd
 
 import (
 	"fmt"
+	"net/http"
 	"time"
+
+	dto "github.com/prometheus/client_model/go"
+	"github.com/prometheus/common/expfmt"
 
 	"github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
@@ -12,7 +16,7 @@ import (
 
 const (
 	// Name of plugin
-	Name = "ping"
+	Name = "goddd"
 	// Version of plugin
 	Version = 1
 	// Type of plugin
@@ -21,7 +25,7 @@ const (
 
 var (
 	// make sure that we actually satisify requierd interface
-	_ plugin.CollectorPlugin = (*Ping)(nil)
+	_ plugin.CollectorPlugin = (*Goddd)(nil)
 
 	metricNames = []string{
 		"avg",
@@ -33,15 +37,41 @@ var (
 	}
 )
 
-type Ping struct {
+// Goddd struct
+type Goddd struct {
 }
 
-func New() *Ping {
-	return &Ping{}
+// New return an instance of Goddd
+func New() *Goddd {
+	return &Goddd{}
+}
+
+func loadMetrics() map[string]*dto.MetricFamily {
+	// FIXME url
+	resp, err := http.Get("http://localhost:8080/metrics")
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer resp.Body.Close()
+
+	var parser expfmt.TextParser
+	ans, err := parser.TextToMetricFamilies(resp.Body)
+
+	if err != nil {
+		fmt.Println("err is \n\n", err)
+	}
+
+	//ans, err := promql.ParseMetric()
+	// for label, val := range ans {
+	// 	fmt.Println(label)
+	// 	fmt.Println(val.String(), "\n")
+	// }
+
+	return ans
 }
 
 // CollectMetrics collects metrics for testing
-func (p *Ping) CollectMetrics(mts []plugin.MetricType) ([]plugin.MetricType, error) {
+func (p *Goddd) CollectMetrics(mts []plugin.MetricType) ([]plugin.MetricType, error) {
 	var err error
 
 	conf := mts[0].Config().Table()
@@ -73,7 +103,7 @@ func (p *Ping) CollectMetrics(mts []plugin.MetricType) ([]plugin.MetricType, err
 }
 
 func ping(host string, count int, timeout float64, mts []plugin.MetricType) ([]plugin.MetricType, error) {
-	check, err := NewRaintankPingProbe(host, count, timeout)
+	check, err := NewGodddPingProbe(host, count, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +138,7 @@ func ping(host string, count int, timeout float64, mts []plugin.MetricType) ([]p
 		if value, ok := stats[stat]; ok {
 			mt := plugin.MetricType{
 				Data_:      value,
-				Namespace_: core.NewNamespace("raintank", "ping", stat),
+				Namespace_: core.NewNamespace("goddd", "ping", stat),
 				Timestamp_: runTime,
 				Version_:   m.Version(),
 			}
@@ -120,18 +150,18 @@ func ping(host string, count int, timeout float64, mts []plugin.MetricType) ([]p
 }
 
 //GetMetricTypes returns metric types for testing
-func (p *Ping) GetMetricTypes(cfg plugin.ConfigType) ([]plugin.MetricType, error) {
+func (p *Goddd) GetMetricTypes(cfg plugin.ConfigType) ([]plugin.MetricType, error) {
 	mts := []plugin.MetricType{}
 	for _, metricName := range metricNames {
 		mts = append(mts, plugin.MetricType{
-			Namespace_: core.NewNamespace("raintank", "ping", metricName),
+			Namespace_: core.NewNamespace("goddd", "ping", metricName),
 		})
 	}
 	return mts, nil
 }
 
 //GetConfigPolicy returns a ConfigPolicyTree for testing
-func (p *Ping) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
+func (p *Goddd) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	c := cpolicy.New()
 	rule0, _ := cpolicy.NewStringRule("hostname", true)
 	rule1, _ := cpolicy.NewFloatRule("timeout", false, 10.0)
@@ -140,7 +170,7 @@ func (p *Ping) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	cp.Add(rule0)
 	cp.Add(rule1)
 	cp.Add(rule2)
-	c.Add([]string{"raintank", "ping"}, cp)
+	c.Add([]string{"goddd", "ping"}, cp)
 	return c, nil
 }
 

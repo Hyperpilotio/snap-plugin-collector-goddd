@@ -1,0 +1,15 @@
+package: github.com/swhsiang/snap-plugin-collector-goddd
+import:
+- package: github.com/intelsdi-x/snap
+  version: ^1.1.0
+  subpackages:
+  - control/plugin
+- package: github.com/prometheus/prometheus
+  version: ^1.5.2
+  subpackages:
+  - promql
+testImport:
+- package: github.com/smartystreets/goconvey
+  version: ^1.6.2
+  subpackages:
+  - convey
