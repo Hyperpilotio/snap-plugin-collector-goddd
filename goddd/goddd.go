@@ -19,9 +19,7 @@ import (
 
 var (
 	// make sure that we actually satisify requierd interface
-	//_ plugin.CollectorPlugin = (*Collector)(nil)
-
-	metricNames = []string{}
+	//_ plugin.GoCollectorPlugin = (*Collector)(nil)
 
 	vendor          = "hyperpilot"
 	pluginName      = "goddd"
@@ -29,22 +27,26 @@ var (
 	nameSpacePrefix = []string{vendor, pluginName}
 )
 
-// Collector struct
-type Collector struct {
-	URL            string
-	metricFamilies map[string]*dto.MetricFamily
+// GoCollector struct
+type GoCollector struct {
+	URL string
 }
 
 // New return an instance of Goddd
-func New(url string) *Collector {
-	return &Collector{URL: url}
+func New(url string) GoCollector {
+	return GoCollector{URL: url}
 }
 
 // CollectMetrics will be called by Snap when a task that collects one of the metrics returned from this plugins
-func (c *Collector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
+func (c GoCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
 	metrics := []plugin.Metric{}
-	c.collect()
 	currentTime := time.Now()
+
+	metricFamilies, err := c.collect()
+	if err != nil {
+		return metrics, fmt.Errorf("Error on GoCollector.collect():\n%s", err.Error())
+
+	}
 
 	for idx, mt := range mts {
 		mts[idx].Timestamp = currentTime
@@ -55,11 +57,12 @@ func (c *Collector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error)
 			{
 				metric := plugin.Metric{
 					Namespace: plugin.NewNamespace(ns...),
-					Data:      c.metricFamilies[ns[len(ns)-1]].GetMetric()[0].GetGauge(),
+					Data:      metricFamilies[ns[len(ns)-1]].GetMetric()[0].GetGauge().GetValue(),
 					Timestamp: currentTime,
 					Version:   int64(pluginVersion),
 					Unit:      "B",
 				}
+				fmt.Printf("[YO] go_memstats_mcache_sys_bytes got\n%v", metric)
 				metrics = append(metrics, metric)
 			}
 		default:
@@ -98,15 +101,14 @@ func parseMetrics(httpBody io.Reader) (map[string]*dto.MetricFamily, error) {
 	return metricFamilies, nil
 }
 
-func (c *Collector) collect() error {
+func (c GoCollector) collect() (map[string]*dto.MetricFamily, error) {
 	var httpBody io.Reader
 	httpBody, err := downloadMetrics(c.URL)
 	metricFamilies, err := parseMetrics(httpBody)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	c.metricFamilies = metricFamilies
-	return nil
+	return metricFamilies, nil
 }
 
 // func ping(host string, count int, timeout float64, mts []plugin.Metric) ([]plugin.Metric, error) {
@@ -161,16 +163,16 @@ func parseMetricKey(val dto.MetricFamily) {
 }
 
 //GetMetricTypes returns metric types for testing
-func (c *Collector) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) {
+func (c GoCollector) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) {
 	mts := []plugin.Metric{}
-
-	if err := c.collect(); err != nil {
+	metricFamilies, err := c.collect()
+	if err != nil {
 		return nil, err
 	}
 
 	//List of terminal metric names
 	mList := make(map[string]bool)
-	for _, val := range c.metricFamilies {
+	for _, val := range metricFamilies {
 		// Keep it if not already seen before
 		if !mList[*val.Name] {
 			mList[*val.Name] = true
@@ -188,7 +190,7 @@ func (c *Collector) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) {
 }
 
 //GetConfigPolicy returns a ConfigPolicyTree for testing
-func (c *Collector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
+func (c GoCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
 	policy := plugin.NewConfigPolicy()
 	return *policy, nil
 }
