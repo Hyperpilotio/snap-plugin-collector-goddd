@@ -1,17 +1,16 @@
 package main
 
 import (
-	"os"
-
-	"github.com/intelsdi-x/snap/control/plugin"
+	// "github.com/intelsdi-x/snap/control/plugin"
+	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 	"github.com/swhsiang/snap-plugin-collector-goddd/goddd"
 )
 
-func main() {
+const (
+	pluginName    = "snap-plugin-collector-goddd"
+	pluginVersion = 1
+)
 
-	plugin.Start(
-		goddd.Meta(),
-		goddd.New(),
-		os.Args[1],
-	)
+func main() {
+	plugin.StartCollector(goddd.New("http://goddd:8080/metrics"), pluginName, pluginVersion)
 }
