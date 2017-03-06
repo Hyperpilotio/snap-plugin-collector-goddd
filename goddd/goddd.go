@@ -18,9 +18,6 @@ import (
 )
 
 var (
-	// make sure that we actually satisify requierd interface
-	//_ plugin.GoCollectorPlugin = (*Collector)(nil)
-
 	vendor          = "hyperpilot"
 	pluginName      = "goddd"
 	pluginVersion   = 1
@@ -51,24 +48,33 @@ func (c GoCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error
 	for idx, mt := range mts {
 		mts[idx].Timestamp = currentTime
 		ns := mt.Namespace.Strings()
+		metricOfGoddd := metricFamilies[ns[len(ns)-1]]
 
-		switch ns[len(ns)-1] {
-		case "go_memstats_mcache_sys_bytes":
-			{
-				metric := plugin.Metric{
-					Namespace: plugin.NewNamespace(ns...),
-					Data:      metricFamilies[ns[len(ns)-1]].GetMetric()[0].GetGauge().GetValue(),
-					Timestamp: currentTime,
-					Version:   int64(pluginVersion),
-					Unit:      "B",
-				}
-				fmt.Printf("[YO] go_memstats_mcache_sys_bytes got\n%v", metric)
+		metric := plugin.Metric{
+			Namespace: plugin.NewNamespace(ns...),
+			Timestamp: currentTime,
+			Version:   int64(pluginVersion),
+		}
+
+		switch metricOfGoddd.GetType() {
+		case dto.MetricType_GAUGE:
+			if len(metricOfGoddd.GetMetric()) > 0 {
+				metric.Unit = "B"
+				metric.Data = metricOfGoddd.GetMetric()[0].GetGauge().GetValue()
 				metrics = append(metrics, metric)
 			}
-		default:
-			{
-				return nil, fmt.Errorf("Invalid metric: %v", ns)
+		case dto.MetricType_COUNTER:
+			if len(metricOfGoddd.GetMetric()) > 0 {
+				metric.Data = metricOfGoddd.GetMetric()[0].GetCounter().GetValue()
+				metrics = append(metrics, metric)
 			}
+			// case dto.MetricType_SUMMARY:
+			// 	if len(metricOfGoddd.GetMetric()) > 0 {
+			// 		metric.Unit = "B"
+			// 		metric.Data = metricOfGoddd.GetMetric()[0]
+			// 		metrics = append(metrics, metric)
+			// 	}
+
 		}
 	}
 	return metrics, nil
@@ -111,63 +117,12 @@ func (c GoCollector) collect() (map[string]*dto.MetricFamily, error) {
 	return metricFamilies, nil
 }
 
-// func ping(host string, count int, timeout float64, mts []plugin.Metric) ([]plugin.Metric, error) {
-// 	check, err := NewGodddPingProbe(host, count, timeout)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	runTime := time.Now()
-// 	result, err := check.Run()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	stats := make(map[string]float64)
-// 	if result.Avg != nil {
-// 		stats["avg"] = *result.Avg
-// 	}
-// 	if result.Min != nil {
-// 		stats["min"] = *result.Min
-// 	}
-// 	if result.Max != nil {
-// 		stats["max"] = *result.Max
-// 	}
-// 	if result.Median != nil {
-// 		stats["median"] = *result.Median
-// 	}
-// 	if result.Mdev != nil {
-// 		stats["mdev"] = *result.Mdev
-// 	}
-// 	if result.Loss != nil {
-// 		stats["loss"] = *result.Loss
-// 	}
-
-// 	metrics := make([]plugin.Metric, 0, len(stats))
-// 	for _, m := range mts {
-// 		stat := m.Namespace()[2].Value
-// 		if value, ok := stats[stat]; ok {
-// 			mt := plugin.MetricType{
-// 				Data_:      value,
-// 				Namespace_: core.NewNamespace("goddd", "ping", stat),
-// 				Timestamp_: runTime,
-// 				Version_:   m.Version(),
-// 			}
-// 			metrics = append(metrics, mt)
-// 		}
-// 	}
-
-// 	return metrics, nil
-// }
-
-func parseMetricKey(val dto.MetricFamily) {
-
-}
-
 //GetMetricTypes returns metric types for testing
 func (c GoCollector) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) {
 	mts := []plugin.Metric{}
 	metricFamilies, err := c.collect()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GoCollector.collect() called. Error: %s", err.Error())
 	}
 
 	//List of terminal metric names
@@ -179,8 +134,8 @@ func (c GoCollector) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) 
 			mts = append(mts, plugin.Metric{
 				// /hyperpilot/goddd/*
 				Namespace: plugin.NewNamespace(nameSpacePrefix...).
-					AddStaticElement(*val.Name),
-				Description: *val.Help,
+					AddStaticElement(val.GetName()),
+				Description: val.GetHelp(),
 				Tags:        map[string]string{"type": val.GetType().String()},
 				Version:     int64(pluginVersion),
 			})
