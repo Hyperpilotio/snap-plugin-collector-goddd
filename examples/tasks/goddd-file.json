@@ -7,11 +7,11 @@
     "workflow": {
         "collect": {
             "metrics": {
-                "/raintank/ping/*": {}
+                "/hyperpilot/goddd/*": {}
             },
             "config": {
-            	"/raintank/ping": {
-            		"hostname": "127.0.0.1"
+            	"/hyperpilot/goddd": {
+            		"endpoint": "http://localhost:8080/metrics"
             	}
             },
             "process": null,

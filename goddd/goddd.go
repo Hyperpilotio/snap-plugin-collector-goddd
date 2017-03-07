@@ -12,10 +12,6 @@ import (
 	"github.com/prometheus/common/expfmt"
 
 	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
-	//"github.com/intelsdi-x/snap/control/plugin"
-	//"github.com/intelsdi-x/snap/control/plugin/cpolicy"
-	// "github.com/intelsdi-x/snap/core"
-	//"github.com/intelsdi-x/snap/core/ctypes"
 )
 
 var (
@@ -27,12 +23,11 @@ var (
 
 // GoCollector struct
 type GoCollector struct {
-	URL string
 }
 
 // New return an instance of Goddd
-func New(url string) GoCollector {
-	return GoCollector{URL: url}
+func New() GoCollector {
+	return GoCollector{}
 }
 
 // CollectMetrics will be called by Snap when a task that collects one of the metrics returned from this plugins
@@ -40,7 +35,16 @@ func (c GoCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error
 	metrics := []plugin.Metric{}
 	currentTime := time.Now()
 
-	metricFamilies, err := c.collect()
+	if len(mts) == 0 {
+		return metrics, fmt.Errorf("array of metric type is empty\nPlease check GetMetricTypes()\n")
+	}
+
+	endpoint, err := mts[0].Config.GetString("endpoint")
+	if err != nil {
+		return metrics, err
+	}
+
+	metricFamilies, err := c.collect(endpoint)
 	if err != nil {
 		return metrics, fmt.Errorf("Error on GoCollector.collect():\n%s", err.Error())
 
@@ -141,9 +145,9 @@ func parseMetrics(httpBody io.Reader) (map[string]*dto.MetricFamily, error) {
 	return metricFamilies, nil
 }
 
-func (c GoCollector) collect() (map[string]*dto.MetricFamily, error) {
+func (c GoCollector) collect(endpoint string) (map[string]*dto.MetricFamily, error) {
 	var httpBody io.Reader
-	httpBody, err := downloadMetrics(c.URL)
+	httpBody, err := downloadMetrics(endpoint)
 	metricFamilies, err := parseMetrics(httpBody)
 	if err != nil {
 		return nil, err
@@ -154,7 +158,11 @@ func (c GoCollector) collect() (map[string]*dto.MetricFamily, error) {
 //GetMetricTypes returns metric types for testing
 func (c GoCollector) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) {
 	mts := []plugin.Metric{}
-	metricFamilies, err := c.collect()
+	endpoint, err := cfg.GetString("endpoint")
+	if err != nil {
+		return mts, err
+	}
+	metricFamilies, err := c.collect(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("GoCollector.collect() called. Error: %s", err.Error())
 	}
@@ -181,5 +189,13 @@ func (c GoCollector) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) 
 //GetConfigPolicy returns a ConfigPolicyTree for testing
 func (c GoCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
 	policy := plugin.NewConfigPolicy()
+
+	// name space
+	configKey := nameSpacePrefix
+	policy.AddNewStringRule(configKey,
+		"endpoint",
+		false,
+		plugin.SetDefaultString("http://localhost:8080"))
+
 	return *policy, nil
 }

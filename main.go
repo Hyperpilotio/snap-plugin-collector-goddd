@@ -12,5 +12,5 @@ const (
 )
 
 func main() {
-	plugin.StartCollector(goddd.New("http://goddd:8080/metrics"), pluginName, pluginVersion)
+	plugin.StartCollector(goddd.New(), pluginName, pluginVersion)
 }
