@@ -41,12 +41,12 @@ func (c GoCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error
 
 	endpoint, err := mts[0].Config.GetString("endpoint")
 	if err != nil {
-		return metrics, err
+		return metrics, fmt.Errorf("Error on mts[0].Config.GetString(endpoint)\nError: %s\nendpoint: %s", err.Error(), endpoint)
 	}
 
 	metricFamilies, err := c.collect(endpoint)
 	if err != nil {
-		return metrics, fmt.Errorf("Error on GoCollector.collect():\n%s", err.Error())
+		return metrics, fmt.Errorf("Error on GoCollector.collect():\n%s\nendpoint: %s\n", err.Error(), endpoint)
 
 	}
 
@@ -56,9 +56,10 @@ func (c GoCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error
 		metricOfGoddd := metricFamilies[ns[len(ns)-1]]
 
 		metric := plugin.Metric{
-			Namespace: plugin.NewNamespace(ns...),
-			Timestamp: currentTime,
-			Version:   int64(pluginVersion),
+			Namespace:   plugin.NewNamespace(ns...),
+			Timestamp:   currentTime,
+			Description: metricOfGoddd.GetHelp(),
+			Version:     int64(pluginVersion),
 		}
 
 		switch metricOfGoddd.GetType() {
@@ -158,31 +159,16 @@ func (c GoCollector) collect(endpoint string) (map[string]*dto.MetricFamily, err
 //GetMetricTypes returns metric types for testing
 func (c GoCollector) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) {
 	mts := []plugin.Metric{}
-	endpoint, err := cfg.GetString("endpoint")
-	if err != nil {
-		return mts, err
-	}
-	metricFamilies, err := c.collect(endpoint)
-	if err != nil {
-		return nil, fmt.Errorf("GoCollector.collect() called. Error: %s", err.Error())
+
+	for _, val := range MetricList {
+		mts = append(mts, plugin.Metric{
+			// /hyperpilot/goddd/*
+			Namespace: plugin.NewNamespace(nameSpacePrefix...).
+				AddStaticElement(val),
+			Version: int64(pluginVersion),
+		})
 	}
 
-	//List of terminal metric names
-	mList := make(map[string]bool)
-	for _, val := range metricFamilies {
-		// Keep it if not already seen before
-		if !mList[val.GetName()] {
-			mList[*val.Name] = true
-			mts = append(mts, plugin.Metric{
-				// /hyperpilot/goddd/*
-				Namespace: plugin.NewNamespace(nameSpacePrefix...).
-					AddStaticElement(val.GetName()),
-				Description: val.GetHelp(),
-				Tags:        map[string]string{"type": val.GetType().String()},
-				Version:     int64(pluginVersion),
-			})
-		}
-	}
 	return mts, nil
 }
 
@@ -195,7 +181,7 @@ func (c GoCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
 	policy.AddNewStringRule(configKey,
 		"endpoint",
 		false,
-		plugin.SetDefaultString("http://localhost:8080"))
+		plugin.SetDefaultString("http://localhost:8080/metrics"))
 
 	return *policy, nil
 }
