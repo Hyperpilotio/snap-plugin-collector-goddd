@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	dto "github.com/prometheus/client_model/go"
@@ -59,7 +60,9 @@ func (c GoCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error
 		switch metricOfGoddd.GetType() {
 		case dto.MetricType_GAUGE:
 			if len(metricOfGoddd.GetMetric()) > 0 {
-				metric.Unit = "B"
+				if strings.Contains(metricOfGoddd.GetName(), "bytes") {
+					metric.Unit = "B"
+				}
 				metric.Data = metricOfGoddd.GetMetric()[0].GetGauge().GetValue()
 				metrics = append(metrics, metric)
 			}
@@ -68,16 +71,47 @@ func (c GoCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error
 				metric.Data = metricOfGoddd.GetMetric()[0].GetCounter().GetValue()
 				metrics = append(metrics, metric)
 			}
-			// case dto.MetricType_SUMMARY:
-			// 	if len(metricOfGoddd.GetMetric()) > 0 {
-			// 		metric.Unit = "B"
-			// 		metric.Data = metricOfGoddd.GetMetric()[0]
-			// 		metrics = append(metrics, metric)
-			// 	}
+		case dto.MetricType_SUMMARY:
+			if len(metricOfGoddd.GetMetric()) > 0 {
+
+				if metric.Data, err = processSummaryMetric(metricOfGoddd.GetMetric()[0]); err != nil {
+					metric.Data = ""
+				}
+				metrics = append(metrics, metric)
+			}
 
 		}
 	}
 	return metrics, nil
+}
+
+func processSummaryMetric(metric *dto.Metric) (string, error) {
+	summaryStruct := Summary{}
+
+	summaryStruct.SampleCount = metric.GetSummary().GetSampleCount()
+	summaryStruct.SampleSum = metric.GetSummary().GetSampleSum()
+
+	for _, quantile := range metric.GetSummary().GetQuantile() {
+		switch quantile.GetQuantile() {
+		case 0.5:
+			summaryStruct.Quantile050 = quantile.GetQuantile()
+		case 0.9:
+			summaryStruct.Quantile090 = quantile.GetQuantile()
+		case 0.99:
+			summaryStruct.Quantile099 = quantile.GetQuantile()
+		}
+	}
+
+	for _, label := range metric.GetLabel() {
+		summaryStruct.Label = append(summaryStruct.Label, &LabelStruct{Name: label.GetName(), Value: label.GetValue()})
+	}
+
+	str, err := summaryStruct.MarshalJSON()
+	if err != nil {
+		return "", err
+	}
+
+	return string(str), nil
 }
 
 func downloadMetrics(url string) (io.Reader, error) {
@@ -129,7 +163,7 @@ func (c GoCollector) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) 
 	mList := make(map[string]bool)
 	for _, val := range metricFamilies {
 		// Keep it if not already seen before
-		if !mList[*val.Name] {
+		if !mList[val.GetName()] {
 			mList[*val.Name] = true
 			mts = append(mts, plugin.Metric{
 				// /hyperpilot/goddd/*

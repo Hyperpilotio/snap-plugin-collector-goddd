@@ -9,6 +9,7 @@ import:
 - package: github.com/prometheus/common
   subpackages:
   - expfmt
+- package: github.com/mailru/easyjson
 testImport:
 - package: github.com/smartystreets/goconvey
   version: ^1.6.2

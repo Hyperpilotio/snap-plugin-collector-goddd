@@ -1,5 +1,5 @@
-hash: e791cd5af3a07e26be4c5e4b30f659d0958b4b1ab8c38a4820bf9f083c865bfd
-updated: 2017-03-06T02:42:22.204823226+08:00
+hash: cddfb9ce3a124e86be4dd29f7608b5bd641d274f17ee89357c981c8f8b5ea85d
+updated: 2017-03-08T04:09:45.421086966+08:00
 imports:
 - name: github.com/golang/protobuf
   version: 888eb0692c857ec880338addf316bd662d5e630e
@@ -12,6 +12,12 @@ imports:
   - v1/plugin/rpc
 - name: github.com/julienschmidt/httprouter
   version: 8c199fb6259ffc1af525cc3ad52ee60ba8359669
+- name: github.com/mailru/easyjson
+  version: db58e6f9072c545a3a24b8d44c51d81fff6dcb51
+  subpackages:
+  - buffer
+  - jlexer
+  - jwriter
 - name: github.com/matttproud/golang_protobuf_extensions
   version: d0c3fe89de86839aecf2e0579c40ba3bb336a453
   subpackages:
