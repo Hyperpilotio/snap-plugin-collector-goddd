@@ -8,7 +8,6 @@ services:
   - docker
 env:
   global:
-  - ORG_PATH=/home/travis/gopath/src/github.com/intelsdi-x
   - SNAP_PLUGIN_SOURCE=/home/travis/gopath/src/github.com/${TRAVIS_REPO_SLUG}
   matrix:
   - TEST_TYPE: small
@@ -38,16 +37,17 @@ matrix:
   - go: 1.6.x
     env: TEST_TYPE=build
 before_install:
-- "[[ -d $SNAP_PLUGIN_SOURCE ]] || mkdir -p $ORG_PATH && ln -s $TRAVIS_BUILD_DIR $SNAP_PLUGIN_SOURCE"
-install:
-- cd $SNAP_PLUGIN_SOURCE
-- make deps
+- sudo add-apt-repository ppa:masterminds/glide -y
+- "curl -s https://packagecloud.io/install/repositories/intelsdi-x/snap/script.deb.sh | sudo bash"
+- sudo apt-get update -qq
+- sudo apt-get install -y snap-telemetry
+- sudo apt-get install glide
 script:
 - make check 2>&1
 notifications:
   email: false
-before_deploy:
-- "./scripts/pre_deploy.sh"
+#before_deploy:
+#- "./scripts/pre_deploy.sh"
 #deploy:
 #- provider: releases
 #  api_key:

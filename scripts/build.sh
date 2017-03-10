@@ -5,7 +5,7 @@ SOURCEDIR=$1
 BUILDDIR=$SOURCEDIR/build
 PLUGIN=`echo $SOURCEDIR | grep -oh "snap-.*"`
 ROOTFS=$BUILDDIR/rootfs
-BUILDCMD='go build -a -ldflags "-w"'
+BUILDCMD='go build -a -installsuffix cgo -ldflags "-w"'
 
 echo
 echo "****  Snap Plugin Build  ****"

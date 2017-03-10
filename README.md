@@ -1,5 +1,7 @@
 # snap-plugin-collector-goddd
 
+[![Build Status](https://travis-ci.org/swhsiang/snap-plugin-collector-goddd.svg?branch=master)](https://travis-ci.org/swhsiang/snap-plugin-collector-goddd)
+
 ## Dev
 
 ```{shell}
