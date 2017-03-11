@@ -39,7 +39,7 @@ func (c GoCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error
 		return metrics, fmt.Errorf("array of metric type is empty\nPlease check GetMetricTypes()\n")
 	}
 
-	endpoint, err := mts[0].Config.GetString("endpoint")
+	endpoint, err := parseEndpoint(mts[0].Config.GetString("endpoint"))
 	if err != nil {
 		return metrics, fmt.Errorf("Error on mts[0].Config.GetString(endpoint)\nError: %s\nendpoint: %s", err.Error(), endpoint)
 	}
@@ -184,4 +184,15 @@ func (c GoCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
 		plugin.SetDefaultString("http://localhost:8080/metrics"))
 
 	return *policy, nil
+}
+
+func parseEndpoint(address string, err error) (string, error) {
+	if err != nil {
+		return address, err
+	}
+
+	if strings.Contains(address, "/metrics") {
+		return address, err
+	}
+	return address + "/metrics", err
 }

@@ -13,6 +13,7 @@ make all
 ## Usage
 
 ```{shell}
+# Remember to give GODDD_URL in the configuration file of goddd.
 snaptel plugin load build/rootfs/snap-plugin-collector-goddd
 snaptel task create -t examples/goddd-file.json
 ```
