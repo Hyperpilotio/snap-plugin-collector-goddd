@@ -1,4 +1,4 @@
-package: github.com/swhsiang/snap-plugin-collector-goddd
+package: github.com/hyperpilot/snap-plugin-collector-goddd
 import:
 - package: github.com/intelsdi-x/snap-plugin-lib-go
   subpackages:
