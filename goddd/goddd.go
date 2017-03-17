@@ -124,16 +124,19 @@ func downloadMetrics(url string) (io.Reader, error) {
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
+	} else if resp.StatusCode == http.StatusOK {
+		defer resp.Body.Close()
+
+		// Copy content from the body of http request
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(resp.Body)
+		b := buf.Bytes()
+		httpBody := bytes.NewReader(b)
+
+		return httpBody, nil
+	} else {
+		return nil, fmt.Errorf("Status code:%d Response: %v\n", resp.StatusCode, resp)
 	}
-	defer resp.Body.Close()
-
-	// Copy content from the body of http request
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(resp.Body)
-	b := buf.Bytes()
-	httpBody := bytes.NewReader(b)
-
-	return httpBody, nil
 }
 
 func parseMetrics(httpBody io.Reader) (map[string]*dto.MetricFamily, error) {
