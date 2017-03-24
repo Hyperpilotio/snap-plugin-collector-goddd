@@ -3,7 +3,7 @@ package main
 import (
 	// "github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
-	"github.com/swhsiang/snap-plugin-collector-goddd/goddd"
+	"github.com/hyperpilotio/snap-plugin-collector-goddd/goddd"
 )
 
 const (

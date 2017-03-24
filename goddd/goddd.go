@@ -78,11 +78,26 @@ func (c GoCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error
 			}
 		case dto.MetricType_SUMMARY:
 			if len(metricOfGoddd.GetMetric()) > 0 {
-
-				if metric.Data, err = processSummaryMetric(metricOfGoddd.GetMetric()[0]); err != nil {
-					metric.Data = ""
+				summaryData, tags, err := processSummaryMetric(metricOfGoddd.GetMetric()[0])
+				if err != nil {
+					continue
 				}
-				metrics = append(metrics, metric)
+
+				for key, val := range summaryData {
+					tagsForMetric := make(map[string]string)
+					for tagName, tagVal := range tags {
+						tagsForMetric[tagName] = tagVal
+					}
+					tagsForMetric["summary"] = key
+					subMetric := plugin.Metric{
+						Namespace: metric.Namespace,
+						Timestamp: metric.Timestamp,
+						Description: metric.Description,
+						Data: val,
+						Tags: tagsForMetric,
+					}
+					metrics = append(metrics, subMetric)
+				}
 			}
 
 		}
@@ -90,33 +105,23 @@ func (c GoCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error
 	return metrics, nil
 }
 
-func processSummaryMetric(metric *dto.Metric) (string, error) {
-	summaryStruct := Summary{}
-
-	summaryStruct.SampleCount = metric.GetSummary().GetSampleCount()
-	summaryStruct.SampleSum = metric.GetSummary().GetSampleSum()
+func processSummaryMetric(metric *dto.Metric) (map[string]float64, map[string]string, error) {
+	summary := make(map[string]float64)
+	summary["count"] = float64(metric.GetSummary().GetSampleCount())
+	summary["sum"] = float64(metric.GetSummary().GetSampleSum())
+	summary["avg"] = summary["sum"] / summary["count"]
 
 	for _, quantile := range metric.GetSummary().GetQuantile() {
-		switch quantile.GetQuantile() {
-		case 0.5:
-			summaryStruct.Quantile050 = quantile.GetQuantile()
-		case 0.9:
-			summaryStruct.Quantile090 = quantile.GetQuantile()
-		case 0.99:
-			summaryStruct.Quantile099 = quantile.GetQuantile()
-		}
+		key := fmt.Sprintf("quantile_%d", int(quantile.GetQuantile() * 100))
+		summary[key] = quantile.GetValue()
 	}
 
+	tags := make(map[string]string)
 	for _, label := range metric.GetLabel() {
-		summaryStruct.Label = append(summaryStruct.Label, &LabelStruct{Name: label.GetName(), Value: label.GetValue()})
+		tags[label.GetName()] = label.GetValue()
 	}
 
-	str, err := summaryStruct.MarshalJSON()
-	if err != nil {
-		return "", err
-	}
-
-	return string(str), nil
+	return summary, tags, nil
 }
 
 func downloadMetrics(url string) (io.Reader, error) {
