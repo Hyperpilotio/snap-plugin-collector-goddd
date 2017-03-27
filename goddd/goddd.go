@@ -53,51 +53,44 @@ func (c GoCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error
 	for idx, mt := range mts {
 		mts[idx].Timestamp = currentTime
 		ns := mt.Namespace.Strings()
-		metricOfGoddd := metricFamilies[ns[len(ns)-1]]
+		metricFamily := metricFamilies[ns[len(ns)-1]]
 
 		metric := plugin.Metric{
 			Namespace:   plugin.NewNamespace(ns...),
 			Timestamp:   currentTime,
-			Description: metricOfGoddd.GetHelp(),
+			Description: metricFamily.GetHelp(),
 			Version:     int64(pluginVersion),
 		}
 
-		switch metricOfGoddd.GetType() {
-		case dto.MetricType_GAUGE:
-			if len(metricOfGoddd.GetMetric()) > 0 {
-				if strings.Contains(metricOfGoddd.GetName(), "bytes") {
+		for _, metricOfGoddd := range metricFamily.GetMetric() {
+			switch metricFamily.GetType() {
+
+			case dto.MetricType_GAUGE:
+				if strings.Contains(metricFamily.GetName(), "bytes") {
 					metric.Unit = "B"
 				}
-				metric.Data = metricOfGoddd.GetMetric()[0].GetGauge().GetValue()
+				metric.Data = metricOfGoddd.GetGauge().GetValue()
+				metric.Tags = getTagsOfMetric(metricOfGoddd)
 				metrics = append(metrics, metric)
-			}
-		case dto.MetricType_COUNTER:
-			if len(metricOfGoddd.GetMetric()) > 0 {
-				metric.Data = metricOfGoddd.GetMetric()[0].GetCounter().GetValue()
+
+			case dto.MetricType_COUNTER:
+				metric.Data = metricOfGoddd.GetCounter().GetValue()
+				metric.Tags = getTagsOfMetric(metricOfGoddd)
 				metrics = append(metrics, metric)
-			}
-		case dto.MetricType_SUMMARY:
-			if len(metricOfGoddd.GetMetric()) > 0 {
-				summaryData, tags, err := processSummaryMetric(metricOfGoddd.GetMetric()[0])
+
+			case dto.MetricType_SUMMARY:
+				summaryData, err := processSummaryMetric(metricOfGoddd)
 				if err != nil {
 					continue
 				}
-
 				for key, val := range summaryData {
-					tagsForMetric := make(map[string]string)
-					for tagName, tagVal := range tags {
-						tagsForMetric[tagName] = tagVal
-					}
-					tagsForMetric["summary"] = key
-					subMetric := plugin.Metric{
-						Namespace: metric.Namespace,
-						Timestamp: metric.Timestamp,
-						Description: metric.Description,
-						Data: val,
-						Tags: tagsForMetric,
-					}
-					metrics = append(metrics, subMetric)
+					tags := getTagsOfMetric(metricOfGoddd)
+					tags["summary"] = key
+					metric.Tags = tags
+					metric.Data = val
+					metrics = append(metrics, metric)
 				}
+
 			}
 
 		}
@@ -105,7 +98,15 @@ func (c GoCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error
 	return metrics, nil
 }
 
-func processSummaryMetric(metric *dto.Metric) (map[string]float64, map[string]string, error) {
+func getTagsOfMetric(metric *dto.Metric) map[string]string {
+	tags := make(map[string]string)
+	for _, label := range metric.GetLabel() {
+		tags[label.GetName()] = label.GetValue()
+	}
+	return tags
+}
+
+func processSummaryMetric(metric *dto.Metric) (map[string]float64, error) {
 	summary := make(map[string]float64)
 	summary["count"] = float64(metric.GetSummary().GetSampleCount())
 	summary["sum"] = float64(metric.GetSummary().GetSampleSum())
@@ -116,12 +117,7 @@ func processSummaryMetric(metric *dto.Metric) (map[string]float64, map[string]st
 		summary[key] = quantile.GetValue()
 	}
 
-	tags := make(map[string]string)
-	for _, label := range metric.GetLabel() {
-		tags[label.GetName()] = label.GetValue()
-	}
-
-	return summary, tags, nil
+	return summary, nil
 }
 
 func downloadMetrics(url string) (io.Reader, error) {
