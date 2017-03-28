@@ -17,11 +17,13 @@ type LabelStruct struct {
 }
 
 const (
-	lengthOfMetricList int = 35
+	lengthOfMetricList int = 37
 )
 
 // MetricList list of metrics from go-kit
 var MetricList = [lengthOfMetricList]string{
+	"api_booking_service_request_count",
+	"api_booking_service_request_latency_microseconds",
 	"go_gc_duration_seconds",
 	"go_goroutines",
 	"go_memstats_alloc_bytes",
