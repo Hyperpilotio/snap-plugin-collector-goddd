@@ -1,6 +1,8 @@
 #!/bin/bash -e
 
 GITVERSION=`git describe --always`
+GOOS=linux
+GOARCH=amd64
 SOURCEDIR=$1
 BUILDDIR=$SOURCEDIR/build
 PLUGIN=`echo $SOURCEDIR | grep -oh "snap-.*"`
@@ -23,4 +25,6 @@ mkdir -p $ROOTFS
 # Build plugin
 echo "Source Dir = $SOURCEDIR"
 echo "Building Snap Plugin: $PLUGIN"
+export GOOS=$GOOS
+export GOARCH=$GOARCH
 $BUILDCMD -o $ROOTFS/$PLUGIN
