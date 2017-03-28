@@ -16,12 +16,8 @@ type LabelStruct struct {
 	Value string `json:"value"`
 }
 
-const (
-	lengthOfMetricList int = 37
-)
-
 // MetricList list of metrics from go-kit
-var MetricList = [lengthOfMetricList]string{
+var MetricList = []string{
 	"api_booking_service_request_count",
 	"api_booking_service_request_latency_microseconds",
 	"go_gc_duration_seconds",

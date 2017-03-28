@@ -2,16 +2,17 @@ package goddd
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/golang/glog"
+	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
-
-	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 )
 
 var (
@@ -39,15 +40,17 @@ func (c GoCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error
 		return metrics, fmt.Errorf("array of metric type is empty\nPlease check GetMetricTypes()\n")
 	}
 
-	endpoint, err := parseEndpoint(mts[0].Config.GetString("endpoint"))
+	endpointConfig, err := mts[0].Config.GetString("endpoint")
 	if err != nil {
-		return metrics, fmt.Errorf("Error on mts[0].Config.GetString(endpoint)\nError: %s\nendpoint: %s", err.Error(), endpoint)
+		return metrics, fmt.Errorf("Unable to get endpoint config: " + err.Error())
 	}
+
+	endpoint := parseEndpoint(endpointConfig)
 
 	metricFamilies, err := c.collect(endpoint)
 	if err != nil {
-		return metrics, fmt.Errorf("Error on GoCollector.collect():\n%s\nendpoint: %s\n", err.Error(), endpoint)
-
+		glog.Warningf("Unable to collect metrics, skipping to next cycle. endpoint: %s, error: %s", endpoint, err.Error())
+		return metrics, nil
 	}
 
 	for idx, mt := range mts {
@@ -113,7 +116,7 @@ func processSummaryMetric(metric *dto.Metric) (map[string]float64, error) {
 	summary["avg"] = summary["sum"] / summary["count"]
 
 	for _, quantile := range metric.GetSummary().GetQuantile() {
-		key := fmt.Sprintf("quantile_%d", int(quantile.GetQuantile() * 100))
+		key := fmt.Sprintf("quantile_%d", int(quantile.GetQuantile()*100))
 		summary[key] = quantile.GetValue()
 	}
 
@@ -136,7 +139,7 @@ func downloadMetrics(url string) (io.Reader, error) {
 
 		return httpBody, nil
 	} else {
-		return nil, fmt.Errorf("Status code:%d Response: %v\n", resp.StatusCode, resp)
+		return nil, fmt.Errorf("Status code: %d Response: %v\n", resp.StatusCode, resp)
 	}
 }
 
@@ -153,9 +156,12 @@ func parseMetrics(httpBody io.Reader) (map[string]*dto.MetricFamily, error) {
 func (c GoCollector) collect(endpoint string) (map[string]*dto.MetricFamily, error) {
 	var httpBody io.Reader
 	httpBody, err := downloadMetrics(endpoint)
+	if err != nil {
+		return nil, errors.New("Unable to download metrics: " + err.Error())
+	}
 	metricFamilies, err := parseMetrics(httpBody)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("Unable to parse metrics: " + err.Error())
 	}
 	return metricFamilies, nil
 }
@@ -190,13 +196,9 @@ func (c GoCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
 	return *policy, nil
 }
 
-func parseEndpoint(address string, err error) (string, error) {
-	if err != nil {
-		return address, err
-	}
-
+func parseEndpoint(address string) string {
 	if strings.Contains(address, "/metrics") {
-		return address, err
+		return address
 	}
-	return address + "/metrics", err
+	return address + "/metrics"
 }

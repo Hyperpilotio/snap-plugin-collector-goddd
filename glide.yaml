@@ -10,6 +10,7 @@ import:
   subpackages:
   - expfmt
 - package: github.com/mailru/easyjson
+- package: github.com/golang/glog
 testImport:
 - package: github.com/smartystreets/goconvey
   version: ^1.6.2
