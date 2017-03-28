@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -22,17 +23,28 @@ var (
 	nameSpacePrefix = []string{vendor, pluginName}
 )
 
+type MetricsDownloader interface {
+	GetMetricsReader(url string) (io.Reader, error)
+	GetEndpoint(config plugin.Config) (string, error)
+}
+
+type HTTPMetricsDownloader struct {
+}
+
 // GoCollector struct
-type GoCollector struct {
+type GodddCollector struct {
+	Downloader MetricsDownloader
 }
 
 // New return an instance of Goddd
-func New() GoCollector {
-	return GoCollector{}
+func New() GodddCollector {
+	return GodddCollector{
+		Downloader: HTTPMetricsDownloader{},
+	}
 }
 
 // CollectMetrics will be called by Snap when a task that collects one of the metrics returned from this plugins
-func (c GoCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
+func (c GodddCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
 	metrics := []plugin.Metric{}
 	currentTime := time.Now()
 
@@ -40,12 +52,10 @@ func (c GoCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error
 		return metrics, fmt.Errorf("array of metric type is empty\nPlease check GetMetricTypes()\n")
 	}
 
-	endpointConfig, err := mts[0].Config.GetString("endpoint")
+	endpoint, err := c.Downloader.GetEndpoint(mts[0].Config)
 	if err != nil {
-		return metrics, fmt.Errorf("Unable to get endpoint config: " + err.Error())
+		return metrics, fmt.Errorf("Unable to get endpoint: " + err.Error())
 	}
-
-	endpoint := parseEndpoint(endpointConfig)
 
 	metricFamilies, err := c.collect(endpoint)
 	if err != nil {
@@ -117,13 +127,30 @@ func processSummaryMetric(metric *dto.Metric) (map[string]float64, error) {
 
 	for _, quantile := range metric.GetSummary().GetQuantile() {
 		key := fmt.Sprintf("quantile_%d", int(quantile.GetQuantile()*100))
-		summary[key] = quantile.GetValue()
+		if !math.IsNaN(quantile.GetValue()) {
+			summary[key] = quantile.GetValue()
+		} else {
+			glog.Warningf("Skipping to write metric %s as it's value is NaN", key)
+		}
 	}
 
 	return summary, nil
 }
 
-func downloadMetrics(url string) (io.Reader, error) {
+func (downloader HTTPMetricsDownloader) GetEndpoint(config plugin.Config) (string, error) {
+	address, err := config.GetString("endpoint")
+	if err != nil {
+		return "", err
+	}
+
+	if strings.Contains(address, "/metrics") {
+		return address, nil
+	}
+
+	return address + "/metrics", nil
+}
+
+func (downloader HTTPMetricsDownloader) GetMetricsReader(url string) (io.Reader, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println(err)
@@ -153,13 +180,12 @@ func parseMetrics(httpBody io.Reader) (map[string]*dto.MetricFamily, error) {
 	return metricFamilies, nil
 }
 
-func (c GoCollector) collect(endpoint string) (map[string]*dto.MetricFamily, error) {
-	var httpBody io.Reader
-	httpBody, err := downloadMetrics(endpoint)
+func (c GodddCollector) collect(endpoint string) (map[string]*dto.MetricFamily, error) {
+	reader, err := c.Downloader.GetMetricsReader(endpoint)
 	if err != nil {
 		return nil, errors.New("Unable to download metrics: " + err.Error())
 	}
-	metricFamilies, err := parseMetrics(httpBody)
+	metricFamilies, err := parseMetrics(reader)
 	if err != nil {
 		return nil, errors.New("Unable to parse metrics: " + err.Error())
 	}
@@ -167,7 +193,7 @@ func (c GoCollector) collect(endpoint string) (map[string]*dto.MetricFamily, err
 }
 
 //GetMetricTypes returns metric types for testing
-func (c GoCollector) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) {
+func (c GodddCollector) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) {
 	mts := []plugin.Metric{}
 
 	for _, val := range MetricList {
@@ -183,7 +209,7 @@ func (c GoCollector) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) 
 }
 
 //GetConfigPolicy returns a ConfigPolicyTree for testing
-func (c GoCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
+func (c GodddCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
 	policy := plugin.NewConfigPolicy()
 
 	// name space
@@ -194,11 +220,4 @@ func (c GoCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
 		plugin.SetDefaultString("http://localhost:8080/metrics"))
 
 	return *policy, nil
-}
-
-func parseEndpoint(address string) string {
-	if strings.Contains(address, "/metrics") {
-		return address
-	}
-	return address + "/metrics"
 }
