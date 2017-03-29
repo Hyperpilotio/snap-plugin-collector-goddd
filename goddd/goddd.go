@@ -114,7 +114,7 @@ func (c GodddCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, er
 				switch metricFamily.GetType() {
 
 				case dto.MetricType_COUNTER:
-					totalCount := 0.0
+					var totalCount float64
 					for _, collectedMetric := range metricsBuffer {
 						totalCount += collectedMetric.Data.(float64)
 					}
@@ -123,8 +123,7 @@ func (c GodddCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, er
 					metricsBuffer = append(metricsBuffer, metric)
 
 				case dto.MetricType_SUMMARY:
-					totalCount := 0.0
-					totalSum := 0.0
+					var totalCount, totalSum float64
 					for _, collectedMetric := range metricsBuffer {
 						switch collectedMetric.Tags["summary"] {
 						case "count":
@@ -135,19 +134,19 @@ func (c GodddCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, er
 					}
 					metric.Data = totalCount
 					metric.Tags = map[string]string{
-						"total": "TOTAL",
+						"total":   "TOTAL",
 						"summary": "count",
 					}
 					metricsBuffer = append(metricsBuffer, metric)
 					metric.Data = totalSum
 					metric.Tags = map[string]string{
-						"total": "TOTAL",
+						"total":   "TOTAL",
 						"summary": "sum",
 					}
 					metricsBuffer = append(metricsBuffer, metric)
 					metric.Data = totalSum / totalCount
 					metric.Tags = map[string]string{
-						"total": "TOTAL",
+						"total":   "TOTAL",
 						"summary": "avg",
 					}
 					metricsBuffer = append(metricsBuffer, metric)
