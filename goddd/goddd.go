@@ -109,48 +109,49 @@ func (c GodddCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, er
 			}
 		}
 
-		if len(metricFamily.GetMetric()) > 1 {
-			switch metricFamily.GetType() {
+		for _, val := range MultiGroupMetricList {
+			if val == metricFamily.GetName() {
+				switch metricFamily.GetType() {
 
-			case dto.MetricType_COUNTER:
-				totalCount := 0.0
-				for _, collectedMetric := range metricsBuffer {
-					totalCount += collectedMetric.Data.(float64)
-				}
-				metric.Data = totalCount
-				metric.Tags = map[string]string{"total": "TOTAL"}
-				metricsBuffer = append(metricsBuffer, metric)
-
-			case dto.MetricType_SUMMARY:
-				totalCount := 0.0
-				totalSum := 0.0
-				for _, collectedMetric := range metricsBuffer {
-					collectedMetric.Tags["total"] = ""
-					switch collectedMetric.Tags["summary"] {
-					case "count":
+				case dto.MetricType_COUNTER:
+					totalCount := 0.0
+					for _, collectedMetric := range metricsBuffer {
 						totalCount += collectedMetric.Data.(float64)
-					case "sum":
-						totalSum += collectedMetric.Data.(float64)
 					}
+					metric.Data = totalCount
+					metric.Tags = map[string]string{"total": "TOTAL"}
+					metricsBuffer = append(metricsBuffer, metric)
+
+				case dto.MetricType_SUMMARY:
+					totalCount := 0.0
+					totalSum := 0.0
+					for _, collectedMetric := range metricsBuffer {
+						switch collectedMetric.Tags["summary"] {
+						case "count":
+							totalCount += collectedMetric.Data.(float64)
+						case "sum":
+							totalSum += collectedMetric.Data.(float64)
+						}
+					}
+					metric.Data = totalCount
+					metric.Tags = map[string]string{
+						"total": "TOTAL",
+						"summary": "count",
+					}
+					metricsBuffer = append(metricsBuffer, metric)
+					metric.Data = totalSum
+					metric.Tags = map[string]string{
+						"total": "TOTAL",
+						"summary": "sum",
+					}
+					metricsBuffer = append(metricsBuffer, metric)
+					metric.Data = totalSum / totalCount
+					metric.Tags = map[string]string{
+						"total": "TOTAL",
+						"summary": "avg",
+					}
+					metricsBuffer = append(metricsBuffer, metric)
 				}
-				metric.Data = totalCount
-				metric.Tags = map[string]string{
-					"total": "TOTAL",
-					"summary": "count",
-				}
-				metricsBuffer = append(metricsBuffer, metric)
-				metric.Data = totalSum
-				metric.Tags = map[string]string{
-					"total": "TOTAL",
-					"summary": "sum",
-				}
-				metricsBuffer = append(metricsBuffer, metric)
-				metric.Data = totalSum / totalCount
-				metric.Tags = map[string]string{
-					"total": "TOTAL",
-					"summary": "avg",
-				}
-				metricsBuffer = append(metricsBuffer, metric)
 			}
 		}
 
