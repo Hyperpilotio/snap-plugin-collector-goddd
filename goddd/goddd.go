@@ -109,7 +109,7 @@ func (c GodddCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, er
 			}
 		}
 
-		for _, val := range MultiGroupMetricList {
+		for _, val := range MultiGroupsMetricList {
 			if val == metricFamily.GetName() {
 				switch metricFamily.GetType() {
 
