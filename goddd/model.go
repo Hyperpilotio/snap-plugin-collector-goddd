@@ -56,3 +56,9 @@ var MetricList = []string{
 	"process_start_time_seconds",
 	"process_virtual_memory_bytes",
 }
+
+// MultiGroupsMetricList list of metrics that needs an extra "total" tag
+var MultiGroupsMetricList = []string{
+	"api_booking_service_request_count",
+	"api_booking_service_request_latency_microseconds",
+}

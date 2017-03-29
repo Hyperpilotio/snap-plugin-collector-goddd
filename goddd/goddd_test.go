@@ -216,6 +216,34 @@ func TestGodddPlugin(t *testing.T) {
 					So(math.IsNaN(metric.Data.(float64)), ShouldBeFalse)
 				}
 			})
+			Convey("Goddd collector should calculate overall sum, count and average for metrics in MultiGroupMetricList", func() {
+				totalTagCounter := 0
+				for _, metric := range metrics {
+					ns := strings.Join(metric.Namespace.Strings(), "/")
+					if total, _ := metric.Tags["total"]; total == "TOTAL" {
+						switch ns {
+						case "hyperpilot/goddd/api_booking_service_request_count":
+							totalTagCounter += 1
+							So(metric.Data.(float64), ShouldEqual, 128264)
+						case "hyperpilot/goddd/api_booking_service_request_latency_microseconds":
+							switch metric.Tags["summary"] {
+							case "sum":
+								totalTagCounter += 1
+								So(metric.Data.(float64), ShouldEqual, 355850.04806273786)
+							case "count":
+								totalTagCounter += 1
+								So(metric.Data.(float64), ShouldEqual, 128225)
+							case "avg":
+								totalTagCounter += 1
+								So(metric.Data.(float64), ShouldEqual, 2.7752002188554328)
+							}
+						}
+					}
+				}
+				Convey("Goddd collector should collect exactly 4 overall summary metrics for the test metrics", func() {
+					So(totalTagCounter, ShouldEqual, 4)
+				})
+			})
 		})
 	})
 }
