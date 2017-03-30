@@ -188,12 +188,10 @@ func TestGodddPlugin(t *testing.T) {
 		Convey("So Goddd collector should not be nil", func() {
 			So(collector, ShouldNotBeNil)
 		})
-		Convey("So Goddd collector should be of GodddCollector type", func() {
-			So(collector, ShouldHaveSameTypeAs, GodddCollector{})
-		})
 		Convey("collector.GetConfigPolicy() should return a config policy", func() {
-			configPolicy, _ := collector.GetConfigPolicy()
+			configPolicy, err := collector.GetConfigPolicy()
 			Convey("So config policy should not be nil", func() {
+				So(err, ShouldBeNil)
 				So(configPolicy, ShouldNotBeNil)
 				t.Log(configPolicy)
 			})
@@ -204,18 +202,38 @@ func TestGodddPlugin(t *testing.T) {
 	})
 
 	Convey("Test parsing metrics", t, func() {
-		collector := New()
-		collector.Downloader = &MockMetricsDownloader{}
+		// collector := New()
+		collector := &GodddCollector{
+			Downloader: &MockMetricsDownloader{},
+			cache:      NewCache(),
+		}
+
 		Convey("Goddd collect metrics should succesfully parse test metrics", func() {
 			metricTypes, err := collector.GetMetricTypes(plugin.Config{})
 			So(err, ShouldBeNil)
 			metrics, err := collector.CollectMetrics(metricTypes)
 			So(err, ShouldBeNil)
+
+			Convey("Goddd collector should only store the diff of counter in a period of time", func() {
+				for _, metric := range metrics {
+					ns := strings.Join(metric.Namespace.Strings(), "/")
+					if ns == "hyperpilot/goddd/api_booking_service_request_count" {
+						switch metric.Tags["method"] {
+						case "list_cargos":
+							So(metric.Data.(float64), ShouldBeZeroValue)
+						case "list_locations":
+							So(metric.Data.(float64), ShouldBeZeroValue)
+						}
+					}
+				}
+			})
+
 			Convey("Goddd collector should skip NaN metric values", func() {
 				for _, metric := range metrics {
 					So(math.IsNaN(metric.Data.(float64)), ShouldBeFalse)
 				}
 			})
+
 			Convey("Goddd collector should calculate overall sum, count and average for metrics in MultiGroupMetricList", func() {
 				totalTagCounter := 0
 				for _, metric := range metrics {
@@ -223,18 +241,18 @@ func TestGodddPlugin(t *testing.T) {
 					if total, _ := metric.Tags["total"]; total == "TOTAL" {
 						switch ns {
 						case "hyperpilot/goddd/api_booking_service_request_count":
-							totalTagCounter += 1
+							totalTagCounter++
 							So(metric.Data.(float64), ShouldEqual, 128264)
 						case "hyperpilot/goddd/api_booking_service_request_latency_microseconds":
 							switch metric.Tags["summary"] {
 							case "sum":
-								totalTagCounter += 1
+								totalTagCounter++
 								So(metric.Data.(float64), ShouldEqual, 355850.04806273786)
 							case "count":
-								totalTagCounter += 1
+								totalTagCounter++
 								So(metric.Data.(float64), ShouldEqual, 128225)
 							case "avg":
-								totalTagCounter += 1
+								totalTagCounter++
 								So(metric.Data.(float64), ShouldEqual, 2.7752002188554328)
 							}
 						}
