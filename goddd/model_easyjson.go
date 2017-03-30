@@ -17,7 +17,7 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjsonC80ae7adDecodeGithubComSwhsiangSnapPluginCollectorGodddGoddd(in *jlexer.Lexer, out *Summary) {
+func easyjsonC80ae7adDecodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd(in *jlexer.Lexer, out *Summary) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -87,7 +87,7 @@ func easyjsonC80ae7adDecodeGithubComSwhsiangSnapPluginCollectorGodddGoddd(in *jl
 		in.Consumed()
 	}
 }
-func easyjsonC80ae7adEncodeGithubComSwhsiangSnapPluginCollectorGodddGoddd(out *jwriter.Writer, in Summary) {
+func easyjsonC80ae7adEncodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd(out *jwriter.Writer, in Summary) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -148,27 +148,27 @@ func easyjsonC80ae7adEncodeGithubComSwhsiangSnapPluginCollectorGodddGoddd(out *j
 // MarshalJSON supports json.Marshaler interface
 func (v Summary) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonC80ae7adEncodeGithubComSwhsiangSnapPluginCollectorGodddGoddd(&w, v)
+	easyjsonC80ae7adEncodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v Summary) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonC80ae7adEncodeGithubComSwhsiangSnapPluginCollectorGodddGoddd(w, v)
+	easyjsonC80ae7adEncodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *Summary) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonC80ae7adDecodeGithubComSwhsiangSnapPluginCollectorGodddGoddd(&r, v)
+	easyjsonC80ae7adDecodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *Summary) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonC80ae7adDecodeGithubComSwhsiangSnapPluginCollectorGodddGoddd(l, v)
+	easyjsonC80ae7adDecodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd(l, v)
 }
-func easyjsonC80ae7adDecodeGithubComSwhsiangSnapPluginCollectorGodddGoddd1(in *jlexer.Lexer, out *LabelStruct) {
+func easyjsonC80ae7adDecodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd1(in *jlexer.Lexer, out *LabelStruct) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -201,7 +201,7 @@ func easyjsonC80ae7adDecodeGithubComSwhsiangSnapPluginCollectorGodddGoddd1(in *j
 		in.Consumed()
 	}
 }
-func easyjsonC80ae7adEncodeGithubComSwhsiangSnapPluginCollectorGodddGoddd1(out *jwriter.Writer, in LabelStruct) {
+func easyjsonC80ae7adEncodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd1(out *jwriter.Writer, in LabelStruct) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -223,23 +223,190 @@ func easyjsonC80ae7adEncodeGithubComSwhsiangSnapPluginCollectorGodddGoddd1(out *
 // MarshalJSON supports json.Marshaler interface
 func (v LabelStruct) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonC80ae7adEncodeGithubComSwhsiangSnapPluginCollectorGodddGoddd1(&w, v)
+	easyjsonC80ae7adEncodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd1(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v LabelStruct) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonC80ae7adEncodeGithubComSwhsiangSnapPluginCollectorGodddGoddd1(w, v)
+	easyjsonC80ae7adEncodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd1(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *LabelStruct) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonC80ae7adDecodeGithubComSwhsiangSnapPluginCollectorGodddGoddd1(&r, v)
+	easyjsonC80ae7adDecodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd1(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *LabelStruct) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonC80ae7adDecodeGithubComSwhsiangSnapPluginCollectorGodddGoddd1(l, v)
+	easyjsonC80ae7adDecodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd1(l, v)
+}
+func easyjsonC80ae7adDecodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd2(in *jlexer.Lexer, out *CounterCache) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "pre":
+			out.Pre = float64(in.Float64())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjsonC80ae7adEncodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd2(out *jwriter.Writer, in CounterCache) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if !first {
+		out.RawByte(',')
+	}
+	first = false
+	out.RawString("\"pre\":")
+	out.Float64(float64(in.Pre))
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v CounterCache) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjsonC80ae7adEncodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd2(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v CounterCache) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjsonC80ae7adEncodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd2(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *CounterCache) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjsonC80ae7adDecodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd2(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *CounterCache) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjsonC80ae7adDecodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd2(l, v)
+}
+func easyjsonC80ae7adDecodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd3(in *jlexer.Lexer, out *CacheType) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "counterType":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				in.Delim('{')
+				if !in.IsDelim('}') {
+					out.CounterType = make(map[string]CounterCache)
+				} else {
+					out.CounterType = nil
+				}
+				for !in.IsDelim('}') {
+					key := string(in.String())
+					in.WantColon()
+					var v4 CounterCache
+					(v4).UnmarshalEasyJSON(in)
+					(out.CounterType)[key] = v4
+					in.WantComma()
+				}
+				in.Delim('}')
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjsonC80ae7adEncodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd3(out *jwriter.Writer, in CacheType) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if !first {
+		out.RawByte(',')
+	}
+	first = false
+	out.RawString("\"counterType\":")
+	if in.CounterType == nil && (out.Flags&jwriter.NilMapAsEmpty) == 0 {
+		out.RawString(`null`)
+	} else {
+		out.RawByte('{')
+		v5First := true
+		for v5Name, v5Value := range in.CounterType {
+			if !v5First {
+				out.RawByte(',')
+			}
+			v5First = false
+			out.String(string(v5Name))
+			out.RawByte(':')
+			(v5Value).MarshalEasyJSON(out)
+		}
+		out.RawByte('}')
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v CacheType) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjsonC80ae7adEncodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd3(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v CacheType) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjsonC80ae7adEncodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd3(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *CacheType) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjsonC80ae7adDecodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd3(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *CacheType) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjsonC80ae7adDecodeGithubComHyperpilotioSnapPluginCollectorGodddGoddd3(l, v)
 }
