@@ -62,3 +62,13 @@ var MultiGroupsMetricList = []string{
 	"api_booking_service_request_count",
 	"api_booking_service_request_latency_microseconds",
 }
+
+// Cache the structure of json file for cache
+type CacheType struct {
+	CounterType map[string]CounterCache `json:"counterType"`
+}
+
+// CounterCache struct to store counter type data
+type CounterCache struct {
+	Pre float64 `json:"pre"`
+}

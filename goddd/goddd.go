@@ -31,25 +31,27 @@ type MetricsDownloader interface {
 type HTTPMetricsDownloader struct {
 }
 
-// GoCollector struct
+// GodddCollector struct
 type GodddCollector struct {
 	Downloader MetricsDownloader
+	cache      *CacheType
 }
 
 // New return an instance of Goddd
-func New() GodddCollector {
-	return GodddCollector{
+func New() plugin.Collector {
+	return &GodddCollector{
 		Downloader: HTTPMetricsDownloader{},
+		cache:      NewCache(),
 	}
 }
 
-// CollectMetrics will be called by Snap when a task that collects one of the metrics returned from this plugins
-func (c GodddCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
-	metrics := []plugin.Metric{}
+func (c *GodddCollector) _collectMetrics(mts []plugin.Metric) ([]metricWithType, error) {
+	var err error
+	metrics := []metricWithType{}
 	currentTime := time.Now()
 
 	if len(mts) == 0 {
-		return metrics, fmt.Errorf("array of metric type is empty\nPlease check GetMetricTypes()\n")
+		return metrics, fmt.Errorf("array of metric type is empty\nPlease check GetMetricTypes()")
 	}
 
 	endpoint, err := c.Downloader.GetEndpoint(mts[0].Config)
@@ -68,14 +70,15 @@ func (c GodddCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, er
 		ns := mt.Namespace.Strings()
 		metricFamily := metricFamilies[ns[len(ns)-1]]
 
-		metric := plugin.Metric{
-			Namespace:   plugin.NewNamespace(ns...),
-			Timestamp:   currentTime,
-			Description: metricFamily.GetHelp(),
-			Version:     int64(pluginVersion),
+		metric := metricWithType{
+			Type: metricFamily.GetType(),
 		}
+		metric.Namespace = plugin.NewNamespace(ns...)
+		metric.Timestamp = currentTime
+		metric.Description = metricFamily.GetHelp()
+		metric.Version = int64(pluginVersion)
 
-		metricsBuffer := []plugin.Metric{}
+		metricsBuffer := []metricWithType{}
 
 		for _, metricOfGoddd := range metricFamily.GetMetric() {
 			switch metricFamily.GetType() {
@@ -161,6 +164,27 @@ func (c GodddCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, er
 	return metrics, nil
 }
 
+// CollectMetrics will be called by Snap when a task that collects one of the metrics returned from this plugins
+func (c *GodddCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
+	var (
+		metrics []metricWithType
+		res     []plugin.Metric
+		err     error
+	)
+
+	metrics, err = c._collectMetrics(mts)
+	if err != nil {
+		return mts, err
+	}
+
+	res, err = c._cache(metrics)
+	if err != nil {
+		return mts, err
+	}
+
+	return res, nil
+}
+
 func getTagsOfMetric(metric *dto.Metric) map[string]string {
 	tags := make(map[string]string)
 	for _, label := range metric.GetLabel() {
@@ -243,7 +267,7 @@ func (c GodddCollector) collect(endpoint string) (map[string]*dto.MetricFamily, 
 }
 
 //GetMetricTypes returns metric types for testing
-func (c GodddCollector) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) {
+func (c *GodddCollector) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) {
 	mts := []plugin.Metric{}
 
 	for _, val := range MetricList {
@@ -259,8 +283,13 @@ func (c GodddCollector) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, erro
 }
 
 //GetConfigPolicy returns a ConfigPolicyTree for testing
-func (c GodddCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
+func (c *GodddCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
 	policy := plugin.NewConfigPolicy()
+
+	err := initCache()
+	if err != nil {
+		return *policy, fmt.Errorf("Unable to call initCache() %s", err.Error())
+	}
 
 	// name space
 	configKey := nameSpacePrefix
