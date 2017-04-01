@@ -113,6 +113,37 @@ func TestGodddPlugin(t *testing.T) {
 						}
 					}
 				})
+
+				Convey("Total number of latency should increase if goddd has new traffic ( 20,000 requests and 40 seconds latency increased )", func() {
+					deleteFileIfExist(cachePath)
+					initCache()
+					collector.cache = NewCache()
+					mockDownloader := &MockMetricsDownloader{}
+					mockDownloader.SetTestData("TEST_DATA_1")
+					collector.Downloader = mockDownloader
+					metrics, _ := collector.CollectMetrics(metricTypes)
+
+					mockDownloader = &MockMetricsDownloader{}
+					mockDownloader.SetTestData("TEST_DATA_2")
+					collector.Downloader = mockDownloader
+					metrics, _ = collector.CollectMetrics(metricTypes)
+
+					for _, metric := range metrics {
+
+						ns := strings.Join(metric.Namespace.Strings(), "/")
+						summary, _ := metric.Tags["summary"]
+						total, _ := metric.Tags["total"]
+
+						if ns == "hyperpilot/goddd/api_booking_service_request_latency_microseconds" && total == "TOTAL" {
+							switch summary {
+							case "count":
+								So(metric.Data.(float64), ShouldEqual, 20000)
+							case "sum":
+								So(metric.Data.(float64), ShouldEqual, 40)
+							}
+						}
+					}
+				})
 			})
 
 			Convey("Goddd collector should skip NaN metric values", func() {
@@ -122,31 +153,40 @@ func TestGodddPlugin(t *testing.T) {
 			})
 
 			Convey("Goddd collector should calculate overall sum, count and average for metrics in MultiGroupMetricList", func() {
-				totalTagCounter := 0
-				for _, metric := range metrics {
-					ns := strings.Join(metric.Namespace.Strings(), "/")
-					if total, _ := metric.Tags["total"]; total == "TOTAL" {
-						switch ns {
-						case "hyperpilot/goddd/api_booking_service_request_count":
-							totalTagCounter++
-							So(metric.Data.(float64), ShouldEqual, 128264)
-						case "hyperpilot/goddd/api_booking_service_request_latency_microseconds":
-							switch metric.Tags["summary"] {
-							case "sum":
+				deleteFileIfExist(cachePath)
+				initCache()
+				collector.cache = NewCache()
+				mockDownloader := &MockMetricsDownloader{}
+				mockDownloader.SetTestData("TEST_DATA_RAW")
+				collector.Downloader = mockDownloader
+				metrics, _ := collector.CollectMetrics(metricTypes)
+				Convey("Overall sum, count, and average should be zero if goddd does not have new traffic ( no new requests )", func() {
+					totalTagCounter := 0
+					for _, metric := range metrics {
+						ns := strings.Join(metric.Namespace.Strings(), "/")
+						if total, _ := metric.Tags["total"]; total == "TOTAL" {
+							switch ns {
+							case "hyperpilot/goddd/api_booking_service_request_count":
 								totalTagCounter++
-								So(metric.Data.(float64), ShouldEqual, 355850.04806273786)
-							case "count":
-								totalTagCounter++
-								So(metric.Data.(float64), ShouldEqual, 128225)
-							case "avg":
-								totalTagCounter++
-								So(metric.Data.(float64), ShouldEqual, 2.7752002188554328)
+								So(metric.Data.(float64), ShouldBeZeroValue)
+							case "hyperpilot/goddd/api_booking_service_request_latency_microseconds":
+								switch metric.Tags["summary"] {
+								case "sum":
+									totalTagCounter++
+									So(metric.Data.(float64), ShouldBeZeroValue)
+								case "count":
+									totalTagCounter++
+									So(metric.Data.(float64), ShouldBeZeroValue)
+								case "avg":
+									totalTagCounter++
+									So(metric.Data.(float64), ShouldBeZeroValue)
+								}
 							}
 						}
 					}
-				}
-				Convey("Goddd collector should collect exactly 4 overall summary metrics for the test metrics", func() {
-					So(totalTagCounter, ShouldEqual, 4)
+					Convey("Goddd collector should collect exactly 4 overall summary metrics for the test metrics", func() {
+						So(totalTagCounter, ShouldEqual, 4)
+					})
 				})
 			})
 		})

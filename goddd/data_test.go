@@ -203,19 +203,33 @@ api_booking_service_request_latency_microseconds_sum{method="request_routes"} 15
 api_booking_service_request_latency_microseconds_count{method="request_routes"} 65281
 `
 
-/* TEST_DATA_2 The value of request counter (method list_cargos and list_location) is changed in contrast to TEST_DATA_1
+/* TEST_DATA_2 The value of request counter and latency (method list_cargos and list_locations) is changed in contrast to TEST_DATA_1
 For example:
 
 TEST_DATA_1
 api_booking_service_request_count{method="list_cargos"} 29775
 api_booking_service_request_count{method="list_locations"} 29355
 
-Increase 10000 requests
+// list_cargos
+api_booking_service_request_latency_microseconds_sum{method="list_cargos"} 127949.75269605908
+api_booking_service_request_latency_microseconds_count{method="list_cargos"} 29766
+
+//list_locations
+api_booking_service_request_latency_microseconds_sum{method="list_locations"} 61888.972835401946
+api_booking_service_request_latency_microseconds_count{method="list_locations"} 29350
 
 TEST_DATA_2
+
+// Increase 10000 requests, respectively.
 api_booking_service_request_count{method="list_cargos"} 39775
 api_booking_service_request_count{method="list_locations"} 39355
 
+// Increase 10,000 requests and 20 seconds of total latency, respectively.
+api_booking_service_request_latency_microseconds_sum{method="list_cargos"} 127969.75269605908
+api_booking_service_request_latency_microseconds_count{method="list_cargos"} 39766
+
+api_booking_service_request_latency_microseconds_sum{method="list_locations"} 61908.972835401946
+api_booking_service_request_latency_microseconds_count{method="list_locations"} 39350
 */
 const TEST_DATA_2 = `
 # HELP api_booking_service_request_count Number of requests received.
@@ -240,13 +254,13 @@ api_booking_service_request_latency_microseconds_count{method="book"} 586
 api_booking_service_request_latency_microseconds{method="list_cargos",quantile="0.5"} 2.202007494
 api_booking_service_request_latency_microseconds{method="list_cargos",quantile="0.9"} 3.6868262979999997
 api_booking_service_request_latency_microseconds{method="list_cargos",quantile="0.99"} 5.19988122
-api_booking_service_request_latency_microseconds_sum{method="list_cargos"} 127949.75269605908
-api_booking_service_request_latency_microseconds_count{method="list_cargos"} 29766
+api_booking_service_request_latency_microseconds_sum{method="list_cargos"} 127969.75269605908
+api_booking_service_request_latency_microseconds_count{method="list_cargos"} 39766
 api_booking_service_request_latency_microseconds{method="list_locations",quantile="0.5"} 0.306621555
 api_booking_service_request_latency_microseconds{method="list_locations",quantile="0.9"} 1.212673664
 api_booking_service_request_latency_microseconds{method="list_locations",quantile="0.99"} 2.402411438
-api_booking_service_request_latency_microseconds_sum{method="list_locations"} 61888.972835401946
-api_booking_service_request_latency_microseconds_count{method="list_locations"} 29350
+api_booking_service_request_latency_microseconds_sum{method="list_locations"} 61908.972835401946
+api_booking_service_request_latency_microseconds_count{method="list_locations"} 39350
 api_booking_service_request_latency_microseconds{method="request_routes",quantile="0.5"} 0.584821579
 api_booking_service_request_latency_microseconds{method="request_routes",quantile="0.9"} 1.601493396
 api_booking_service_request_latency_microseconds{method="request_routes",quantile="0.99"} 2.811945445
