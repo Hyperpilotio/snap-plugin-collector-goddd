@@ -118,6 +118,22 @@ func (c *GodddCollector) _cache(mts []metricWithType) ([]plugin.Metric, error) {
 				metric.Data = float64(0)
 				mts[idx] = metric
 			}
+		case dto.MetricType_SUMMARY:
+			keyForCache, exist := generateCacheKey(metric.Namespace, metric.Tags)
+			if !exist {
+				break
+			}
+
+			if cache, ok := c.cache.CounterType[keyForCache]; ok {
+				c.cache.CounterType[keyForCache] = CounterCache{Pre: metric.Data.(float64)}
+				metric.Data = metric.Data.(float64) - cache.Pre
+				mts[idx] = metric
+			} else {
+				// add cache of this counter
+				c.cache.CounterType[keyForCache] = CounterCache{Pre: metric.Data.(float64)}
+				metric.Data = float64(0)
+				mts[idx] = metric
+			}
 		}
 	}
 
@@ -129,10 +145,23 @@ func (c *GodddCollector) _cache(mts []metricWithType) ([]plugin.Metric, error) {
 
 }
 
+/*
+generateCacheKey three kinds of key
+Counter, example:
+Summary:
+TOTAL: "hyperpilot/goddd/api_booking_service_request_count_total"
+summary for each method / endpoint : "hyperpilot/goddd/api_booking_service_request_latency_microseconds_summary_sum_total"
+*/
 func generateCacheKey(ns plugin.Namespace, tags map[string]string) (string, bool) {
 	if val, ok := tags["method"]; ok {
 		return fmt.Sprintf("%s_method=%s", strings.Join(ns.Strings(), "/"), val), true
 	}
-
+	if val, ok := tags["total"]; ok && val == "TOTAL" {
+		summary, _ := tags["summary"]
+		if summary == "" {
+			return fmt.Sprintf("%s_total", strings.Join(ns.Strings(), "/")), true
+		}
+		return fmt.Sprintf("%s_summary_%s_total", strings.Join(ns.Strings(), "/"), summary), true
+	}
 	return "", false
 }

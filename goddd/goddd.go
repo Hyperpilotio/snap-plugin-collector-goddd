@@ -185,6 +185,7 @@ func (c *GodddCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, e
 	return res, nil
 }
 
+// getTagsOfMetric parse labels of each metric and return them as tags map
 func getTagsOfMetric(metric *dto.Metric) map[string]string {
 	tags := make(map[string]string)
 	for _, label := range metric.GetLabel() {
@@ -207,7 +208,6 @@ func processSummaryMetric(metric *dto.Metric) (map[string]float64, error) {
 			glog.Warningf("Skipping to write metric %s as it's value is NaN", key)
 		}
 	}
-
 	return summary, nil
 }
 
@@ -240,7 +240,7 @@ func (downloader HTTPMetricsDownloader) GetMetricsReader(url string) (io.Reader,
 
 		return httpBody, nil
 	} else {
-		return nil, fmt.Errorf("Status code: %d Response: %v\n", resp.StatusCode, resp)
+		return nil, fmt.Errorf("Status code: %d Response: %v", resp.StatusCode, resp)
 	}
 }
 
