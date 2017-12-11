@@ -1,6 +1,8 @@
-hash: cddfb9ce3a124e86be4dd29f7608b5bd641d274f17ee89357c981c8f8b5ea85d
-updated: 2017-03-08T04:09:45.421086966+08:00
+hash: 6fec550e054b3a63217661b51138d4ee1fdf9cdcb28a71dd107e9b483fa8d18c
+updated: 2017-12-11T19:50:48.605516579Z
 imports:
+- name: github.com/golang/glog
+  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
 - name: github.com/golang/protobuf
   version: 888eb0692c857ec880338addf316bd662d5e630e
   subpackages:
@@ -65,7 +67,7 @@ testImports:
   - internal/go-render/render
   - internal/oglematchers
 - name: github.com/smartystreets/goconvey
-  version: d4c757aa9afd1e2fc1832aaab209b5794eb336e1
+  version: 9e8dc3f972df6c8fcc0375ef492c24d0bb204857
   subpackages:
   - convey
   - convey/gotest
